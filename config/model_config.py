@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Model configuration classes
+模型配置类
+定义SAMBA模型架构和训练参数的配置类
 """
 
 import math
@@ -10,78 +11,111 @@ from typing import Union, List, Dict, Any
 
 @dataclass
 class ModelArgs:
-    """Configuration for SAMBA model architecture"""
-    d_model: int
-    n_layer: int
-    vocab_size: int
-    seq_in: int
-    seq_out: int
-    d_state: int = 128
-    expand: int = 2
-    dt_rank: Union[int, str] = 'auto'
-    d_conv: int = 3
-    pad_vocab_size_multiple: int = 8
-    conv_bias: bool = True
-    bias: bool = False
+    """
+    SAMBA模型架构配置类
+    
+    参数说明:
+        d_model: 模型维度，控制模型的表示能力
+        n_layer: Mamba层数，决定模型深度
+        vocab_size: 词汇表大小，对应股票特征数量
+        seq_in: 输入序列长度，历史时间步数
+        seq_out: 输出序列长度，预测时间步数
+        d_state: 状态维度，Mamba状态空间的维度
+        expand: 扩展因子，控制内部维度扩展
+        dt_rank: 时间步参数的秩，'auto'表示自动计算
+        d_conv: 卷积核大小，1D卷积的核大小
+        pad_vocab_size_multiple: 词汇表大小填充倍数
+        conv_bias: 是否使用卷积偏置
+        bias: 是否使用线性层偏置
+    """
+    d_model: int                    # 模型维度
+    n_layer: int                    # Mamba层数
+    vocab_size: int                 # 词汇表大小(特征数量)
+    seq_in: int                     # 输入序列长度
+    seq_out: int                    # 输出序列长度
+    d_state: int = 128              # 状态维度
+    expand: int = 2                 # 扩展因子
+    dt_rank: Union[int, str] = 'auto'  # 时间步参数秩
+    d_conv: int = 3                 # 卷积核大小
+    pad_vocab_size_multiple: int = 8   # 词汇表填充倍数
+    conv_bias: bool = True          # 卷积偏置
+    bias: bool = False              # 线性层偏置
 
     def __post_init__(self):
+        """
+        初始化后处理，计算派生参数
+        """
+        # 计算内部维度：扩展因子 × 模型维度
         self.d_inner = int(self.expand * self.d_model)
 
+        # 自动计算时间步参数的秩
         if self.dt_rank == 'auto':
             self.dt_rank = math.ceil(self.d_model / 16)
 
 
 @dataclass
 class TrainingConfig:
-    """Configuration for training parameters"""
-    # Dataset parameters
-    dataset: str = 'STOCK_DATA'
-    lag: int = 5
-    horizon: int = 1
-    num_nodes: int = 82  # 82 daily stock features as per the paper
-    val_ratio: float = 0.15
-    test_ratio: float = 0.15
+    """
+    训练参数配置类
     
-    # Model parameters
-    input_dim: int = 1
-    output_dim: int = 1
-    embed_dim: int = 10
-    rnn_units: int = 128
-    num_layers: int = 3
-    cheb_k: int = 3
-    d_in: int = 32
-    hid: int = 32
+    包含数据集参数、模型参数、训练参数、损失函数和系统参数等
+    """
+    # 数据集参数
+    dataset: str = 'STOCK_DATA'     # 数据集名称
+    lag: int = 5                    # 输入序列长度(滞后期)
+    horizon: int = 1                # 预测时间步长
+    num_nodes: int = 82             # 图节点数量(82个日度股票特征)
+    val_ratio: float = 0.15         # 验证集比例
+    test_ratio: float = 0.15        # 测试集比例
     
-    # Training parameters
-    batch_size: int = 32
-    epochs: int = 1100
-    lr_init: float = 0.001
-    lr_decay: bool = True
-    lr_decay_rate: float = 0.5
-    lr_decay_step: List[int] = None
-    early_stop: bool = True
-    early_stop_patience: int = 200
-    grad_norm: bool = False
-    max_grad_norm: float = 5
+    # 模型参数
+    input_dim: int = 1              # 输入维度
+    output_dim: int = 1             # 输出维度
+    embed_dim: int = 10             # 嵌入维度
+    rnn_units: int = 128            # RNN单元数
+    num_layers: int = 3             # 网络层数
+    cheb_k: int = 3                 # 切比雪夫多项式阶数
+    d_in: int = 32                  # 输入特征维度
+    hid: int = 32                   # 隐藏层维度
     
-    # Loss and metrics
-    loss_func: str = 'mae'
-    mae_thresh: float = None
-    mape_thresh: float = 0
+    # 训练参数
+    batch_size: int = 32            # 批次大小
+    epochs: int = 1100              # 训练轮数
+    lr_init: float = 0.001          # 初始学习率
+    lr_decay: bool = True           # 是否使用学习率衰减
+    lr_decay_rate: float = 0.5      # 学习率衰减率
+    lr_decay_step: List[int] = None # 学习率衰减步骤
+    early_stop: bool = True         # 是否启用早停
+    early_stop_patience: int = 200  # 早停耐心值
+    grad_norm: bool = False         # 是否使用梯度裁剪
+    max_grad_norm: float = 5        # 最大梯度范数
     
-    # System parameters
-    device: str = 'cuda:0'
-    seed: int = 1
-    debug: bool = True
-    log_step: int = 20
-    log_dir: str = './'
+    # 损失函数和评估指标
+    loss_func: str = 'mae'          # 损失函数类型
+    mae_thresh: float = None        # MAE阈值
+    mape_thresh: float = 0          # MAPE阈值
+    
+    # 系统参数
+    device: str = 'cuda:0'          # 计算设备
+    seed: int = 1                   # 随机种子
+    debug: bool = True              # 调试模式
+    log_step: int = 20              # 日志记录步长
+    log_dir: str = './'             # 日志目录
     
     def __post_init__(self):
+        """
+        初始化后处理，设置默认的学习率衰减步骤
+        """
         if self.lr_decay_step is None:
             self.lr_decay_step = [40, 70, 100]
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert config to dictionary"""
+        """
+        将配置转换为字典格式
+        
+        返回:
+            Dict[str, Any]: 包含所有配置参数的字典
+        """
         return {
             'dataset': self.dataset,
             'mode': 'train',

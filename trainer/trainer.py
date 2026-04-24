@@ -9,6 +9,7 @@ import copy
 import torch
 import torch.nn as nn
 import numpy as np
+from datetime import datetime
 from utils.logger import get_logger
 from utils.metrics import All_Metrics
 
@@ -147,10 +148,17 @@ class Trainer:
         training_time = time.time() - start_time
         self.logger.info("Total training time: {:.4f}min, best loss: {:.6f}".format((training_time / 60), best_loss))
         
-        # Save the best model to file
+        # Save the best model to file with timestamped backup
         if not self.args.get('debug'):
+            # Save latest model (overwritten each time)
             torch.save(best_model, self.best_path)
             self.logger.info("Saving current best model to " + self.best_path)
+            
+            # Save timestamped backup (preserved)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            timestamped_path = os.path.join(self.args.get('log_dir'), f'best_model_{timestamp}.pth')
+            torch.save(best_model, timestamped_path)
+            self.logger.info("Saving timestamped model backup to " + timestamped_path)
         
         # Test
         self.model.load_state_dict(best_model)
@@ -158,15 +166,26 @@ class Trainer:
         
         return y1, y2
     
-    def save_checkpoint(self):
-        """Save training checkpoint"""
+    def save_checkpoint(self, timestamp=None):
+        """Save training checkpoint with optional timestamp"""
+        if timestamp is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
         state = {
             'state_dict': self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
-            'config': self.args
+            'config': self.args,
+            'timestamp': timestamp
         }
+        
+        # Save latest checkpoint (overwritten)
         torch.save(state, self.best_path)
         self.logger.info("Saving current best model to " + self.best_path)
+        
+        # Save timestamped checkpoint (preserved)
+        timestamped_path = os.path.join(self.args.get('log_dir'), f'checkpoint_{timestamp}.pth')
+        torch.save(state, timestamped_path)
+        self.logger.info("Saving timestamped checkpoint to " + timestamped_path)
     
     @staticmethod
     def test(model, args, data_loader, logger, path=None):

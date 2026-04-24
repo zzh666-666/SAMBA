@@ -1,13 +1,25 @@
 # -*- coding: utf-8 -*-
 """
-Main training script for SAMBA stock price forecasting model
+SAMBA多数据集训练脚本
+
+该脚本实现了完整的SAMBA模型多数据集训练流程，包括：
+1. 支持多数据集配置和训练
+2. 历史记录管理
+3. 自动化训练流程
+4. 结果汇总和对比
+
+基于论文：《Mamba Meets Financial Markets: A Graph-Mamba Approach for Stock Price Prediction》
+会议：IEEE ICASSP 2025
 """
 
 import os
+import json
+import time
+from datetime import datetime
 import torch
 import torch.nn as nn
 import numpy as np
-from paper_config import get_paper_config, get_dataset_info
+from paper_config import get_paper_config, get_dataset_info, get_dataset_mapping
 from models import SAMBA
 from utils import (
     prepare_data, init_seed, print_model_parameters, 
@@ -16,187 +28,314 @@ from utils import (
 from trainer import Trainer
 
 
-def masked_mae_loss(scaler, mask_value):
-    """Masked MAE loss function"""
-    def loss(preds, labels):
-        if scaler:
-            preds = scaler.inverse_transform(preds)
-            labels = scaler.inverse_transform(labels)
-        from utils.metrics import MAE_torch
-        mae = MAE_torch(pred=preds, true=labels, mask_value=mask_value)
-        return mae
-    return loss
+def build_loss_function(loss_name, device):
+    """Build the configured training loss."""
+    loss_name = (loss_name or 'mae').lower()
+
+    if loss_name == 'mae':
+        return torch.nn.L1Loss().to(device)
+    if loss_name == 'mse':
+        return torch.nn.MSELoss().to(device)
+    if loss_name in {'huber', 'smooth_l1', 'smoothl1'}:
+        return torch.nn.SmoothL1Loss().to(device)
+
+    raise ValueError(f"Unsupported loss_func: {loss_name}")
+
+
+def dump_json(data, path, required=True):
+    """Write JSON to disk and optionally tolerate file-lock issues."""
+    try:
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+    except PermissionError:
+        if required:
+            raise
+        print(f"Warning: skipped updating locked file: {path}")
+
+
+def create_directories():
+    """创建必要的目录结构"""
+    datasets = ["NYSE", "NASDAQ", "DJIA"]
+    for dataset in datasets:
+        os.makedirs(f"saved_models/{dataset}", exist_ok=True)
+    os.makedirs("saved_models/summary", exist_ok=True)
+    print("✅ 目录结构创建完成")
+
+
+def train_single_dataset(dataset_name, dataset_file):
+    """训练单个数据集"""
+    print(f"\n🎯 开始训练数据集: {dataset_name}")
+    print(f"📊 数据集文件: {dataset_file}")
+    print("-" * 50)
+    
+    # 检查数据集文件是否存在
+    if not os.path.exists(dataset_file):
+        print(f"❌ 数据集文件不存在: {dataset_file}")
+        return None
+    
+    # 获取配置
+    model_args, config = get_paper_config(dataset_name)
+    print(f"💾 模型保存路径: {config.log_dir}")
+    
+    # 执行训练
+    results = run_training(model_args, config, dataset_file, dataset_name)
+    
+    if results:
+        print(f"✅ {dataset_name} 训练完成!")
+        print(f"📈 结果: IC={results['IC']:.4f}, RIC={results['RIC']:.4f}, RMSE={results['RMSE']:.4f}")
+    
+    return results
+
+
+def run_training(model_args, config, dataset_file, dataset_name):
+    """执行训练过程"""
+    try:
+        # 初始化随机种子
+        init_seed(config.seed)
+        
+        # 准备数据
+        train_loader, val_loader, test_loader, mmn, num_features = prepare_data(
+            csv_file=dataset_file,
+            window=config.lag,
+            predict=config.horizon,
+            test_ratio=config.test_ratio,
+            val_ratio=config.val_ratio,
+            batch_size=config.batch_size
+        )
+        
+        # 更新配置
+        config.num_nodes = num_features
+        model_args.vocab_size = num_features
+        model_args.seq_in = config.lag
+        model_args.seq_out = config.horizon
+        
+        # 初始化模型
+        model = SAMBA(
+            model_args,
+            config.hid,
+            config.lag,
+            config.horizon,
+            config.embed_dim,
+            config.cheb_k
+        ).cuda()
+        
+        # 初始化模型参数
+        for p in model.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
+            else:
+                nn.init.uniform_(p)
+        
+        print_model_parameters(model, only_num=False)
+        
+        # 设置损失函数和优化器
+        loss = build_loss_function(config.loss_func, config.device)
+        optimizer = torch.optim.Adam(
+            params=model.parameters(),
+            lr=config.lr_init,
+            eps=1.0e-8,
+            weight_decay=0,
+            amsgrad=False
+        )
+        
+        # 设置学习率调度器
+        lr_scheduler = None
+        if config.lr_decay:
+            lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+                optimizer=optimizer,
+                milestones=[0.5 * config.epochs, 0.7 * config.epochs, 0.9 * config.epochs],
+                gamma=0.1
+            )
+        
+        # 训练
+        trainer = Trainer(
+            model, loss, optimizer, train_loader, val_loader, test_loader,
+            args=config.to_dict(), lr_scheduler=lr_scheduler
+        )
+        
+        start_time = time.time()
+        y_pred, y_true = trainer.train()
+        training_time = time.time() - start_time
+        
+        # 测试评估
+        y1, y2 = trainer.test(trainer.model, trainer.args, test_loader, trainer.logger)
+        
+        # 计算最终指标
+        y_p = np.array(y1[:, 0, :].cpu())
+        y_t = np.array(y2[:, 0, :].cpu())
+        
+        y_p = mmn.inverse_transform(y_p)
+        y_t = mmn.inverse_transform(y_t)
+        
+        y_p = torch.tensor(y_p)
+        y_t = torch.tensor(y_t)
+        
+        # 计算收益率
+        diff = y_p[1:] - y_p[:-1]
+        return_p = diff / y_p[:-1]
+        
+        diff = y_t[1:] - y_t[:-1]
+        return_t = diff / y_t[:-1]
+        
+        # 计算评估指标
+        mae, rmse, _ = All_Metrics(return_p, return_t, None, None)
+        IC = pearson_correlation(return_t, return_p)
+        RIC = rank_information_coefficient(return_t[:, 0], return_p[:, 0])
+        
+        # 保存结果 - 支持历史记录
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        results = {
+            "dataset": dataset_name,
+            "IC": float(IC),
+            "RIC": float(RIC),
+            "MAE": float(mae),
+            "RMSE": float(rmse),
+            "training_time_minutes": training_time / 60,
+            "timestamp": datetime.now().isoformat(),
+            "run_id": timestamp,
+            "config": {
+                "batch_size": config.batch_size,
+                "lr_init": config.lr_init,
+                "epochs": config.epochs,
+                "early_stop_patience": config.early_stop_patience
+            }
+        }
+        
+        # 保存最新结果 (会覆盖)
+        results_file = os.path.join(config.log_dir, "results.json")
+        dump_json(results, results_file, required=False)
+        
+        # 保存历史记录 (追加模式)
+        history_file = os.path.join(config.log_dir, "results_history.json")
+        history_results = []
+        
+        # 读取已有历史记录
+        if os.path.exists(history_file):
+            try:
+                with open(history_file, 'r') as f:
+                    history_results = json.load(f)
+            except:
+                history_results = []
+        
+        # 添加新结果
+        history_results.append(results)
+        
+        # 保存更新后的历史记录
+        dump_json(history_results, history_file, required=False)
+        
+        # 保存带时间戳的详细结果
+        detailed_results_file = os.path.join(config.log_dir, f"results_{timestamp}.json")
+        dump_json(results, detailed_results_file)
+        
+        # 保存配置备份 (带时间戳)
+        config_file = os.path.join(config.log_dir, f"config_{timestamp}.json")
+        dump_json(config.to_dict(), config_file)
+        
+        # 保存最新配置 (会覆盖)
+        latest_config_file = os.path.join(config.log_dir, "config.json")
+        dump_json(config.to_dict(), latest_config_file, required=False)
+        
+        print(f"\n{dataset_name} final results:")
+        print(f"IC: {IC:.4f}")
+        print(f"RIC: {RIC:.4f}")
+        print(f"MAE: {mae:.4f}")
+        print(f"RMSE: {rmse:.4f}")
+        print(f"Training time: {training_time/60:.2f} minutes")
+        print(f"Run ID: {timestamp}")
+        
+        return results
+        
+    except Exception as e:
+        print(f"Training error: {str(e)}")
+        return None
+
+
+def save_summary_results(all_results):
+    """保存汇总结果"""
+    summary_file = "saved_models/summary/all_results_comparison.json"
+    with open(summary_file, 'w') as f:
+        json.dump(all_results, f, indent=2)
+    
+    # 创建对比表格
+    comparison_md = "# SAMBA 多数据集训练结果对比\n\n"
+    comparison_md += "## 📊 结果汇总表\n\n"
+    comparison_md += "| 数据集 | IC | RIC | RMSE | MAE | 训练时间(分钟) | 运行ID |\n"
+    comparison_md += "|--------|----|----|------|-----|----------------|--------|\n"
+    
+    for dataset, results in all_results.items():
+        comparison_md += f"| {dataset} | {results['IC']:.4f} | {results['RIC']:.4f} | {results['RMSE']:.4f} | {results['MAE']:.4f} | {results['training_time_minutes']:.1f} | {results['run_id']} |\n"
+    
+    with open("saved_models/summary/training_summary.md", 'w', encoding='utf-8') as f:
+        f.write(comparison_md)
+    
+    print(f"📄 汇总结果已保存到: saved_models/summary/")
+
+
+def print_comparison_table(all_results):
+    """打印对比表格"""
+    print("\n" + "="*80)
+    print("📊 多数据集训练结果汇总")
+    print("="*80)
+    
+    print(f"{'数据集':<10} {'IC':<8} {'RIC':<8} {'RMSE':<8} {'MAE':<8} {'训练时间':<10} {'运行ID':<15}")
+    print("-" * 85)
+    
+    for dataset, results in all_results.items():
+        print(f"{dataset:<10} {results['IC']:<8.4f} {results['RIC']:<8.4f} {results['RMSE']:<8.4f} {results['MAE']:<8.4f} {results['training_time_minutes']:<10.1f} {results['run_id']:<15}")
 
 
 def main():
-    """Main training function using paper configuration"""
-    # Get paper configuration
-    model_args, config = get_paper_config()
-    dataset_info = get_dataset_info()
+    """主函数 - 在这里配置要训练的数据集"""
     
-    print("🚀 SAMBA: A Graph-Mamba Approach for Stock Price Prediction")
-    print(f"📚 Paper: {dataset_info['paper_title']}")
-    print(f"🏛️  Conference: {dataset_info['conference']}")
-    print(f"👥 Authors: {', '.join(dataset_info['authors'])}")
-    print(f"📊 Expected Features: {dataset_info['total_features']}")
-    print("=" * 70)
+    # ===== 配置要训练的数据集 =====
+    # 在这里添加或删除要训练的数据集
+    # datasets_to_train = [
+    #     ("NYSE", "Dataset/combined_dataframe_NYSE.csv"),
+    #     ("NASDAQ", "Dataset/combined_dataframe_IXIC.csv"),
+    #     ("DJIA", "Dataset/combined_dataframe_DJI.csv")
+    # ]
     
-    # Initialize seed for reproducibility
-    init_seed(config.seed)
+    # 如果只想训练单个数据集，可以这样配置：
+    datasets_to_train = [
+        ("NYSE", "Dataset/combined_dataframe_NYSE.csv")
+    ]
     
-    # Prepare data
-    print("Loading and preparing data...")
+    # 或者训练两个数据集：
+    # datasets_to_train = [
+    #     ("NYSE", "Dataset/combined_dataframe_NYSE.csv"),
+    #     ("NASDAQ", "Dataset/combined_dataframe_IXIC.csv")
+    # ]
+    # ==========================================
     
-    # Available datasets from the paper
-    available_datasets = [ds['file'] for ds in dataset_info['datasets']]
+    print("🚀 SAMBA 多数据集训练系统")
+    print("="*50)
+    print(f"📋 计划训练 {len(datasets_to_train)} 个数据集:")
+    for dataset_name, dataset_file in datasets_to_train:
+        print(f"  - {dataset_name}: {dataset_file}")
+    print("="*50)
     
-    # Use IXIC (NASDAQ) as default, but you can change this
-    dataset_file = 'Dataset/combined_dataframe_IXIC.csv'
+    # 创建目录结构
+    create_directories()
     
-    # Check if Dataset folder exists
-    if not os.path.exists('Dataset'):
-        print("❌ Dataset folder not found!")
-        print("Please create a 'Dataset' folder and put your CSV files in it.")
-        print("Expected files:")
-        for ds in available_datasets:
-            print(f"  - Dataset/{ds}")
-        return
+    # 依次训练每个数据集
+    all_results = {}
     
-    # Check if dataset exists
-    if not os.path.exists(dataset_file):
-        print(f"❌ Dataset {dataset_file} not found!")
-        print("Available datasets in Dataset folder:")
-        for ds in available_datasets:
-            full_path = f"Dataset/{ds}"
-            if os.path.exists(full_path):
-                print(f"  ✅ {full_path}")
-            else:
-                print(f"  ❌ {full_path}")
-        return
-    
-    train_loader, val_loader, test_loader, mmn, num_features = prepare_data(
-        csv_file=dataset_file,
-        window=config.lag,
-        predict=config.horizon,
-        test_ratio=config.test_ratio,
-        val_ratio=config.val_ratio
-    )
-    
-    # Update config with actual number of features (nodes in the graph)
-    config.num_nodes = num_features
-    print(f"Number of features (graph nodes): {num_features}")
-    
-    # Convert config to dict for compatibility
-    args = config.to_dict()
-    
-    # Initialize model with paper configuration
-    print("Initializing SAMBA model...")
-    model_args.vocab_size = num_features  # Update with actual number of features
-    
-    model = SAMBA(
-        model_args,
-        args.get('hid'),
-        args.get('lag'),
-        args.get('horizon'),
-        args.get('embed_dim'),
-        args.get("cheb_k")
-    )
-    
-    model = model.cuda()
-    
-    # Initialize model parameters
-    for p in model.parameters():
-        if p.dim() > 1:
-            nn.init.xavier_uniform_(p)
+    for i, (dataset_name, dataset_file) in enumerate(datasets_to_train, 1):
+        print(f"\n📍 进度: {i}/{len(datasets_to_train)} - 当前数据集: {dataset_name}")
+        results = train_single_dataset(dataset_name, dataset_file)
+        
+        if results:
+            all_results[dataset_name] = results
         else:
-            nn.init.uniform_(p)
+            print(f"❌ {dataset_name} 训练失败，跳过")
+            continue
     
-    print_model_parameters(model, only_num=False)
+    # 保存汇总结果
+    if all_results:
+        save_summary_results(all_results)
+        print_comparison_table(all_results)
     
-    # Setup loss function
-    if args.get('loss_func') == 'mask_mae':
-        loss = masked_mae_loss(mmn, mask_value=0.0)
-    elif args.get('loss_func') == 'mae':
-        loss = torch.nn.L1Loss().to(args.get('device'))
-    elif args.get('loss_func') == 'mse':
-        loss = torch.nn.MSELoss().to(args.get('device'))
-    else:
-        raise ValueError(f"Unknown loss function: {args.get('loss_func')}")
-    
-    # Setup optimizer
-    optimizer = torch.optim.Adam(
-        params=model.parameters(), 
-        lr=args.get('lr_init'), 
-        eps=1.0e-8,
-        weight_decay=0, 
-        amsgrad=False
-    )
-    
-    # Setup learning rate scheduler
-    lr_scheduler = None
-    if args.get('lr_decay'):
-        print('Applying learning rate decay.')
-        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
-            optimizer=optimizer,
-            milestones=[0.5 * args.get('epochs'), 0.7 * args.get('epochs'), 0.9 * args.get('epochs')],
-            gamma=0.1
-        )
-    
-    # Initialize trainer
-    trainer = Trainer(
-        model, loss, optimizer, train_loader, val_loader, test_loader, 
-        args=args, lr_scheduler=lr_scheduler
-    )
-    
-    # Start training
-    print("Starting training...")
-    y_pred, y_true = trainer.train()
-    
-    # Evaluate on test set
-    print("Evaluating on test set...")
-    y1, y2 = trainer.test(trainer.model, trainer.args, test_loader, trainer.logger)
-    
-    # Convert predictions and targets
-    y_p = np.array(y1[:, 0, :].cpu())
-    y_t = np.array(y2[:, 0, :].cpu())
-    
-    # Inverse transform to original scale
-    y_p = mmn.inverse_transform(y_p)
-    y_t = mmn.inverse_transform(y_t)
-    
-    # Convert to tensors
-    y_p = torch.tensor(y_p)
-    y_t = torch.tensor(y_t)
-    
-    # Calculate returns
-    diff = y_p[1:] - y_p[:-1]
-    return_p = diff / y_p[:-1]
-    
-    diff = y_t[1:] - y_t[:-1]
-    return_t = diff / y_t[:-1]
-    
-    # Calculate metrics
-    mae, rmse, _ = All_Metrics(return_p, return_t, None, None)
-    IC = pearson_correlation(return_t, return_p)
-    RIC = rank_information_coefficient(return_t[:, 0], return_p[:, 0])
-    
-    print(f"Final Results:")
-    print(f"MAE: {mae:.4f}")
-    print(f"RMSE: {rmse:.4f}")
-    print(f"Information Coefficient (IC): {IC:.4f}")
-    print(f"Rank Information Coefficient (RIC): {RIC:.4f}")
-    
-    # Save results
-    result_train_file = os.path.join("SAMBA_Model", "results")
-    os.makedirs(result_train_file, exist_ok=True)
-    
-    with open('samba_results.txt', 'a') as f:
-        f.write(f"IC: {np.array(IC)}\n")
-        f.write(f"RIC: {np.array(RIC)}\n")
-        f.write(f"MAE: {np.array(mae)}\n")
-        f.write(f"RMSE: {np.array(rmse)}\n\n")
-    
-    print("Training completed successfully!")
+    print("\n✅ 所有数据集训练完成!")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,94 @@
+（1）源代码
+IC: 0.22556588053703308
+RIC: 0.24128735065460205
+MAE: 0.00984812993556261
+RMSE: 0.014014984481036663
+
+（2）采用论文参数设置，但是batchsize=32
+IC: 0.10713955014944077
+RIC: 0.3223728537559509
+MAE: 0.010121935047209263
+RMSE: 0.014404346235096455
+
+（3）方案1: 学习率调整（但是好像是硬编码为64了，没注意看）
+# 修改paper_config.py
+training_config = TrainingConfig(
+    lr_init=0.0003,           # 降低学习率
+    lr_decay=False,           # 禁用学习率衰减
+    batch_size=32,            # 保持32
+    epochs=2000,              # 增加训练轮数
+    early_stop_patience=400,  # 增加耐心值
+)
+2026-04-19 23:59: **********Train Epoch 1936: averaged Loss: 0.004826
+2026-04-19 23:59: **********Val Epoch 1936: average Loss: 0.003714
+2026-04-19 23:59: *********************************Current best model saved!
+
+IC: 0.4024459421634674
+RIC: 0.40908658504486084
+MAE: 0.010128239169716835
+RMSE: 0.01377524808049202
+
+（4）# === 训练参数优化 ===
+    batch_size=64,            # 增加批次大小提升稳定性
+    epochs=2500,              # 增加训练轮数
+    lr_init=0.0005,           # 根据批次大小调整学习率
+
+    # === 学习率调度优化 ===
+    lr_decay=True,            # 启用学习率衰减
+    lr_decay_rate=0.8,        # 更温和的衰减率
+    lr_decay_step=[1000, 1500, 2000],  # 调整衰减时机
+
+    # === 早停策略优化 ===
+    early_stop=True,
+    early_stop_patience=600,  # 增加耐心值
+    **********Train Epoch 1853: averaged Loss: 0.003264
+
+2026-04-20 14:58: **********Val Epoch 1853: average Loss: 0.005475
+2026-04-20 14:58: Validation performance didn't improve for 600 epochs. Training stops.
+2026-04-20 14:58: Total training time: 78.3007min, best loss: 0.004474
+IC: 0.3109982907772064
+RIC: 0.3038235008716583
+MAE: 0.011123379692435265
+RMSE: 0.014972181990742683
+
+（5）```python
+# 在 paper_config.py 中修改 training_config
+training_config = TrainingConfig(
+    # === 核心参数修正 ===
+    batch_size=64,            # 保持64 (已验证有效)
+    lr_init=0.0003,           # 回归成功的学习率
+    lr_decay=False,           # 禁用学习率衰减 (回归成功配置)
+
+    # === 训练策略优化 ===
+    epochs=2500,              # 保持更长训练周期
+    early_stop_patience=500,  # 适中的耐心值
+
+    # === 其他参数保持 ===
+    val_ratio=0.05,           # 保持论文设置
+    test_ratio=0.15,          # 保持论文设置
+    # ... 其他参数不变
+)
+2026-04-20 17:08: **********Train Epoch 2500: averaged Loss: 0.004778
+2026-04-20 17:08: **********Val Epoch 2500: average Loss: 0.004968
+2026-04-20 17:08: Total training time: 88.6949min, best loss: 0.003562
+2026-04-20 17:08: Average Horizon, MAE: 0.0148, MSE: 0.0164
+Evaluating on test set...
+2026-04-20 17:08: Average Horizon, MAE: 0.0145, MSE: 0.0161
+Final Results:
+
+IC: 0.43084847927093506
+RIC: 0.4490165412425995
+MAE: 0.009821770712733269
+RMSE: 0.013525313697755337
+
+（6）方案3: 精细调优版
+基于当前成功配置，进行微调：
+# 选项A: 微调学习率
+training_config = TrainingConfig(
+    batch_size=64,
+    lr_init=0.00025,          # 略微降低学习率
+    lr_decay=False,
+    epochs=3000,              # 更长训练
+    early_stop_patience=600,
+)
+

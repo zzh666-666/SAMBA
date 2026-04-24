@@ -1,0 +1,226 @@
+[
+  {
+    "dataset": "NYSE",
+    "IC": 0.36942732334136963,
+    "RIC": 0.3761124908924103,
+    "MAE": 0.010953254997730255,
+    "RMSE": 0.015110800974071026,
+    "training_time_minutes": 91.29174052476883,
+    "timestamp": "2026-04-20T20:03:55.971171",
+    "run_id": "20260420_200355",
+    "config": {
+      "batch_size": 64,
+      "lr_init": 0.00025,
+      "epochs": 3000,
+      "early_stop_patience": 600
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.3758808374404907,
+    "RIC": 0.3959556221961975,
+    "MAE": 0.010377171449363232,
+    "RMSE": 0.014213151298463345,
+    "training_time_minutes": 99.89579761823019,
+    "timestamp": "2026-04-21T17:59:20.683509",
+    "run_id": "20260421_175920",
+    "config": {
+      "batch_size": 64,
+      "lr_init": 0.0004,
+      "epochs": 3000,
+      "early_stop_patience": 600
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.331148236989975,
+    "RIC": 0.3278076946735382,
+    "MAE": 0.010542118921875954,
+    "RMSE": 0.014232099056243896,
+    "training_time_minutes": 84.82943545977274,
+    "timestamp": "2026-04-22T12:39:57.617506",
+    "run_id": "20260422_123957",
+    "config": {
+      "batch_size": 64,
+      "lr_init": 0.00035,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.331148236989975,
+    "RIC": 0.3278076946735382,
+    "MAE": 0.010542118921875954,
+    "RMSE": 0.014232099056243896,
+    "training_time_minutes": 86.78303219079972,
+    "timestamp": "2026-04-22T15:58:48.806245",
+    "run_id": "20260422_155848",
+    "config": {
+      "batch_size": 64,
+      "lr_init": 0.00035,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.43084847927093506,
+    "RIC": 0.4490165412425995,
+    "MAE": 0.009821770712733269,
+    "RMSE": 0.013525313697755337,
+    "training_time_minutes": 97.74258835713069,
+    "timestamp": "2026-04-22T18:10:55.885815",
+    "run_id": "20260422_181055",
+    "config": {
+      "batch_size": 64,
+      "lr_init": 0.0003,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.369571328163147,
+    "RIC": 0.37692081928253174,
+    "MAE": 0.010934296064078808,
+    "RMSE": 0.015096940100193024,
+    "training_time_minutes": 90.96064723730088,
+    "timestamp": "2026-04-22T20:05:30.003667",
+    "run_id": "20260422_200530",
+    "config": {
+      "batch_size": 64,
+      "lr_init": 0.00025,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.37681081891059875,
+    "RIC": 0.37350326776504517,
+    "MAE": 0.010386127978563309,
+    "RMSE": 0.014095979742705822,
+    "training_time_minutes": 90.6303648630778,
+    "timestamp": "2026-04-23T10:49:26.293584",
+    "run_id": "20260423_104926",
+    "config": {
+      "batch_size": 64,
+      "lr_init": 0.0003,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.27174443006515503,
+    "RIC": 0.27813684940338135,
+    "MAE": 0.010541142895817757,
+    "RMSE": 0.014288507401943207,
+    "training_time_minutes": 73.44855867226919,
+    "timestamp": "2026-04-23T12:49:28.321668",
+    "run_id": "20260423_124928",
+    "config": {
+      "batch_size": 128,
+      "lr_init": 0.0003,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.45736896991729736,
+    "RIC": 0.5060386657714844,
+    "MAE": 0.009438165463507175,
+    "RMSE": 0.01359337754547596,
+    "training_time_minutes": 137.81682602961857,
+    "timestamp": "2026-04-23T16:28:28.902753",
+    "run_id": "20260423_162828",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0003,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": -0.05097218230366707,
+    "RIC": -0.12789355218410492,
+    "MAE": 0.011311113834381104,
+    "RMSE": 0.01773746870458126,
+    "training_time_minutes": 0.12013607422510783,
+    "timestamp": "2026-04-23T20:01:18.872870",
+    "run_id": "20260423_200118",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0003,
+      "epochs": 1,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": -0.05097218230366707,
+    "RIC": -0.12789355218410492,
+    "MAE": 0.011311113834381104,
+    "RMSE": 0.01773746870458126,
+    "training_time_minutes": 0.11257264614105225,
+    "timestamp": "2026-04-23T20:04:55.559923",
+    "run_id": "20260423_200455",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0003,
+      "epochs": 1,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": -0.05097218230366707,
+    "RIC": -0.12789355218410492,
+    "MAE": 0.011311113834381104,
+    "RMSE": 0.01773746870458126,
+    "training_time_minutes": 0.11329527695973714,
+    "timestamp": "2026-04-23T20:05:36.741595",
+    "run_id": "20260423_200536",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0003,
+      "epochs": 1,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.3304747939109802,
+    "RIC": 0.34158411622047424,
+    "MAE": 0.009835558943450451,
+    "RMSE": 0.013569910079240799,
+    "training_time_minutes": 167.33786155780157,
+    "timestamp": "2026-04-23T22:57:02.208752",
+    "run_id": "20260423_225702",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0003,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.4140864312648773,
+    "RIC": 0.41310322284698486,
+    "MAE": 0.009537551552057266,
+    "RMSE": 0.013076428323984146,
+    "training_time_minutes": 233.0828159014384,
+    "timestamp": "2026-04-24T13:30:07.288201",
+    "run_id": "20260424_133007",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0003,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  }
+]

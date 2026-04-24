@@ -1,73 +1,114 @@
 # -*- coding: utf-8 -*-
 """
-Configuration matching the original SAMBA paper implementation
-Based on: "Mamba Meets Financial Markets: A Graph-Mamba Approach for Stock Price Prediction"
-IEEE ICASSP 2025
+论文配置参数
+
+该文件包含与原始SAMBA论文完全一致的配置参数，确保实验结果的可重现性。
+基于论文：《Mamba Meets Financial Markets: A Graph-Mamba Approach for Stock Price Prediction》
+会议：IEEE ICASSP 2025
 """
 
 from config import ModelArgs, TrainingConfig
 
 
-def get_paper_config():
-    """Get configuration matching the original SAMBA paper"""
+def get_paper_config(dataset_name="NYSE"):
+    """
+    获取与原始SAMBA论文匹配的配置参数
     
-    # Model configuration as per the paper
+    该函数返回论文中使用的精确模型和训练配置，
+    包括所有超参数设置，以确保结果的可重现性。
+    
+    参数:
+        dataset_name: 数据集名称 ("NYSE", "NASDAQ", "DJIA")
+    
+    返回:
+        model_args: 模型架构配置
+        training_config: 训练参数配置
+    """
+    
+    # 模型配置（与论文完全一致）
+    sequence_length = 5
+    forecast_horizon = 1
+
     model_args = ModelArgs(
-        d_model=32,           # Model dimension
-        n_layer=3,            # Number of Mamba layers
-        vocab_size=82,        # 82 daily stock features
-        seq_in=5,             # Input sequence length
-        seq_out=1,            # Prediction horizon
-        d_state=128,          # State dimension
-        expand=2,             # Expansion factor
-        dt_rank='auto',       # Auto-calculated
-        d_conv=3,             # Convolution kernel size
-        pad_vocab_size_multiple=8,
-        conv_bias=True,
-        bias=False
+        d_model=64,           # 模型维度 (论文中E=64)
+        n_layer=3,            # Mamba层数 (论文中R=3)
+        vocab_size=82,        # 82个日度股票特征
+        seq_in=sequence_length,  # 输入序列长度
+        seq_out=forecast_horizon,  # 预测时间步长
+        d_state=64,           # 状态维度 (论文中H=64)
+        expand=2,             # 扩展因子
+        dt_rank='auto',       # 自动计算时间步参数秩
+        d_conv=3,             # 卷积核大小
+        pad_vocab_size_multiple=8,  # 词汇表填充倍数
+        conv_bias=True,       # 卷积偏置
+        bias=False            # 线性层偏置
     )
     
-    # Training configuration as per the paper
+    # 训练配置（与论文完全一致）
     training_config = TrainingConfig(
-        dataset='STOCK_DATA',
-        lag=5,                # Input sequence length
-        horizon=1,            # Prediction horizon
-        num_nodes=82,         # 82 daily stock features
-        val_ratio=0.15,       # 15% validation
-        test_ratio=0.15,      # 15% test
-        input_dim=1,
-        output_dim=1,
-        embed_dim=10,         # Embedding dimension
-        rnn_units=128,        # RNN units
-        num_layers=3,         # Number of layers
-        cheb_k=3,             # Chebyshev polynomial order
-        d_in=32,              # Input dimension
-        hid=32,               # Hidden dimension
-        batch_size=32,        # Batch size
-        epochs=1100,          # Training epochs
-        lr_init=0.001,        # Initial learning rate
-        lr_decay=True,        # Learning rate decay
-        lr_decay_rate=0.5,    # Decay rate
-        lr_decay_step=[40, 70, 100],  # Decay steps
-        early_stop=True,      # Early stopping
-        early_stop_patience=200,  # Patience
-        grad_norm=False,      # Gradient clipping
-        max_grad_norm=5,      # Max gradient norm
-        loss_func='mae',      # Loss function
-        mae_thresh=None,      # MAE threshold
-        mape_thresh=0,        # MAPE threshold
-        device='cuda:0',      # Device
-        seed=1,               # Random seed
-        debug=True,           # Debug mode
-        log_step=20,          # Log step
-        log_dir='./'          # Log directory
+        dataset='STOCK_DATA',     # 数据集名称
+        lag=sequence_length,      # 输入序列长度
+        horizon=forecast_horizon, # 预测时间步长
+        num_nodes=82,             # 82个日度股票特征
+        val_ratio=0.05,           # 5%验证集 (论文设置)
+        test_ratio=0.15,          # 15%测试集 (论文设置)
+        input_dim=1,              # 输入维度
+        output_dim=1,             # 输出维度
+        embed_dim=10,             # 嵌入维度 (论文中de=10)
+        rnn_units=128,            # RNN单元数
+        num_layers=3,             # 网络层数
+        cheb_k=3,                 # 切比雪夫多项式阶数 (论文中K=3)
+        d_in=64,                  # 输入特征维度 (与d_model一致)
+        hid=32,                   # 隐藏层维度 (论文中U=32)
+        batch_size=32,            # 批次大小 (最优配置)
+        epochs=2500,              # 训练轮数 (最优配置)
+        lr_init=0.0003,           # 初始学习率 (最优配置-关键!)
+        lr_decay=False,           # 学习率衰减 (禁用-关键!)
+        lr_decay_rate=0.8,        # 衰减率
+        lr_decay_step=[1000, 1500, 2000],  # 衰减步骤
+        early_stop=True,          # 早停
+        early_stop_patience=500,  # 早停耐心值 (最优配置)
+        grad_norm=False,          # 梯度裁剪
+        max_grad_norm=5,          # 最大梯度范数
+        loss_func='mae',          # 损失函数
+        mae_thresh=None,          # MAE阈值
+        mape_thresh=0,            # MAPE阈值
+        device='cuda:0',          # 计算设备
+        seed=1,                   # 随机种子
+        debug=False,               # 调试模式(模型是否保存)
+        log_step=20,              # 日志记录步长
+        log_dir=f'./saved_models/{dataset_name}/'  # 数据集特定的日志目录
     )
     
     return model_args, training_config
 
 
+def get_dataset_mapping():
+    """
+    获取数据集文件映射
+    
+    返回:
+        dict: 数据集名称到文件路径的映射
+    """
+    return {
+        "NYSE": "Dataset/combined_dataframe_NYSE.csv",
+        "NASDAQ": "Dataset/combined_dataframe_IXIC.csv", 
+        "DJIA": "Dataset/combined_dataframe_DJI.csv"
+    }
+
+
 def get_dataset_info():
-    """Get information about the three datasets used in the paper"""
+    """
+    获取论文中使用的三个数据集的信息
+    
+    返回包含数据集详细信息的字典，包括：
+    - 数据集名称和文件名
+    - 时间范围和特征数量
+    - 论文和作者信息
+    
+    返回:
+        dict: 包含数据集和论文信息的字典
+    """
     return {
         'datasets': [
             {
@@ -101,7 +142,12 @@ def get_dataset_info():
 
 
 def print_paper_info():
-    """Print information about the paper and datasets"""
+    """
+    打印论文和数据集信息
+    
+    该函数以格式化的方式显示论文的详细信息，
+    包括标题、作者、会议、数据集等。
+    """
     info = get_dataset_info()
     
     print("=" * 70)

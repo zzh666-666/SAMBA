@@ -141,12 +141,10 @@ def prepare_data(csv_file, window=5, predict=1, test_ratio=0.15, val_ratio=0.05,
     X = pd.read_csv(csv_file, index_col="Date", parse_dates=True)
     
     # 基础预处理
-    name = X["Name"][0]  # 保存股票名称
-    del X["Name"]        # 删除名称列
-    cols = X.columns
-    
-    # 创建目标变量：下一期价格涨跌（二分类）
-    X["Target"] = (X["Price"].pct_change().shift(-1) > 0).astype(int)
+    if "Name" in X.columns:
+        del X["Name"]        # 删除名称列
+
+    # 不将 Target 类标签加入输入特征，避免信息泄露
     X.dropna(inplace=True)  # 删除缺失值
     
     # 转换为numpy数组
@@ -159,20 +157,20 @@ def prepare_data(csv_file, window=5, predict=1, test_ratio=0.15, val_ratio=0.05,
     val_len = int(val_ratio * n_seq)      # 验证序列数
     train_len = n_seq - test_len - val_len # 训练序列数
     
-    # 确定原始数据的划分点
-    # 测试集：前test_len个序列 -> 原始数据点[0 : test_len + window]
-    # 训练集：接下来train_len个序列 -> 原始数据点[test_len : test_len + train_len + window]
-    # 验证集：最后val_len个序列 -> 原始数据点[test_len + train_len : end]
-    
-    test_end_idx = test_len + window
-    train_start_idx = test_len
-    train_end_idx = test_len + train_len + window
-    val_start_idx = test_len + train_len
+    # 确定原始数据的划分点（按时间正向切分）
+    # 训练集：最早一段时间
+    # 验证集：中间一段时间
+    # 测试集：最后一段时间
+    train_start_idx = 0
+    train_end_idx = train_len + window
+    val_start_idx = train_len
+    val_end_idx = train_len + val_len + window
+    test_start_idx = train_len + val_len
     
     # 划分原始数据
-    a_test = a[:test_end_idx]
     a_train = a[train_start_idx:train_end_idx]
-    a_val = a[val_start_idx:]
+    a_val = a[val_start_idx:val_end_idx]
+    a_test = a[test_start_idx:]
     
     # 仅在训练数据上拟合归一化器
     mmn = MinMaxNorm01()

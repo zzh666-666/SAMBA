@@ -9,7 +9,7 @@
   "test_ratio": 0.15,
   "lag": 5,
   "horizon": 1,
-  "num_nodes": 81,
+  "num_nodes": 82,
   "tod": false,
   "normalizer": "std",
   "column_wise": false,
@@ -24,7 +24,7 @@
   "seed": 1,
   "batch_size": 32,
   "epochs": 2500,
-  "lr_init": 0.0004,
+  "lr_init": 0.0003,
   "lr_decay": false,
   "lr_decay_rate": 0.8,
   "lr_decay_step": [

@@ -60,9 +60,9 @@ def get_paper_config(dataset_name="NYSE"):
         cheb_k=3,                 # 切比雪夫多项式阶数 (论文中K=3)
         d_in=64,                  # 输入特征维度 (与d_model一致)
         hid=32,                   # 隐藏层维度 (论文中U=32)
-        batch_size=32,            # 批次大小 (最优配置)
+        batch_size=32,          # 批次大小 (最优配置)
         epochs=2500,              # 训练轮数 (最优配置)
-        lr_init=0.0003,           # 初始学习率 (最优配置-关键!)
+        lr_init=0.0004,           # 初始学习率 (最优配置-关键!)
         lr_decay=False,           # 学习率衰减 (禁用-关键!)
         lr_decay_rate=0.8,        # 衰减率
         lr_decay_step=[1000, 1500, 2000],  # 衰减步骤

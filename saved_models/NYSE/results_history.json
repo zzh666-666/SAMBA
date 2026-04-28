@@ -222,5 +222,85 @@
       "epochs": 2500,
       "early_stop_patience": 500
     }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.34559792280197144,
+    "RIC": 0.3619701862335205,
+    "MAE": 0.010525980964303017,
+    "RMSE": 0.014377796091139317,
+    "training_time_minutes": 92.26281672716141,
+    "timestamp": "2026-04-25T23:38:37.861142",
+    "run_id": "20260425_233837",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0003,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.45736896991729736,
+    "RIC": 0.5060386657714844,
+    "MAE": 0.009438165463507175,
+    "RMSE": 0.01359337754547596,
+    "training_time_minutes": 124.41788237094879,
+    "timestamp": "2026-04-26T02:16:49.908922",
+    "run_id": "20260426_021649",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0003,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.34723910689353943,
+    "RIC": 0.339673787355423,
+    "MAE": 0.008175303228199482,
+    "RMSE": 0.010755562223494053,
+    "training_time_minutes": 65.53739740053813,
+    "timestamp": "2026-04-26T11:28:23.238988",
+    "run_id": "20260426_112823",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0003,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.27632710337638855,
+    "RIC": 0.26613903045654297,
+    "MAE": 0.008514618501067162,
+    "RMSE": 0.011193559505045414,
+    "training_time_minutes": 77.7949034412702,
+    "timestamp": "2026-04-26T13:04:33.515545",
+    "run_id": "20260426_130433",
+    "config": {
+      "batch_size": 128,
+      "lr_init": 0.0003,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "NYSE",
+    "IC": 0.4983074367046356,
+    "RIC": 0.5191031694412231,
+    "MAE": 0.007332238834351301,
+    "RMSE": 0.009810896590352058,
+    "training_time_minutes": 176.89940080245336,
+    "timestamp": "2026-04-26T23:06:43.017203",
+    "run_id": "20260426_230643",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0004,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
   }
 ]

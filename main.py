@@ -289,16 +289,16 @@ def main():
     
     # ===== 配置要训练的数据集 =====
     # 在这里添加或删除要训练的数据集
-    # datasets_to_train = [
+    datasets_to_train = [
     #     ("NYSE", "Dataset/combined_dataframe_NYSE.csv"),
-    #     ("NASDAQ", "Dataset/combined_dataframe_IXIC.csv"),
-    #     ("DJIA", "Dataset/combined_dataframe_DJI.csv")
-    # ]
+        ("NASDAQ", "Dataset/combined_dataframe_IXIC.csv"),
+        ("DJIA", "Dataset/combined_dataframe_DJI.csv")
+    ]
     
     # 如果只想训练单个数据集，可以这样配置：
-    datasets_to_train = [
-        ("NYSE", "Dataset/combined_dataframe_NYSE.csv")
-    ]
+    # datasets_to_train = [
+    #     ("NYSE", "Dataset/combined_dataframe_NYSE.csv")
+    # ]
     
     # 或者训练两个数据集：
     # datasets_to_train = [

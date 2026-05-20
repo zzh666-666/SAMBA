@@ -1,0 +1,18 @@
+{
+  "dataset": "002129SZ_BASIC",
+  "dataset_file": "/root/data-tmp/zzh/SAMBA/SAMBA/Dataset/combined_dataframe_002129SZ_basic_indicators.csv",
+  "num_features": 14,
+  "IC": 0.5907613635063171,
+  "RIC": 0.527655303478241,
+  "MAE": 0.016781620681285858,
+  "RMSE": 0.022113880142569542,
+  "training_time_minutes": 46.76042774518331,
+  "timestamp": "2026-05-20T04:32:30.917062",
+  "run_id": "20260520_043230",
+  "config": {
+    "batch_size": 32,
+    "lr_init": 0.0004,
+    "epochs": 2500,
+    "early_stop_patience": 500
+  }
+}

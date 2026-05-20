@@ -28,6 +28,17 @@ from utils import (
 from trainer import Trainer
 
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SAVED_MODELS_DIR = os.path.join(BASE_DIR, "saved_models")
+
+
+def resolve_project_path(path):
+    """Resolve paths relative to the SAMBA project directory."""
+    if os.path.isabs(path):
+        return path
+    return os.path.join(BASE_DIR, path)
+
+
 def build_loss_function(loss_name, device):
     """Build the configured training loss."""
     loss_name = (loss_name or 'mae').lower()
@@ -53,17 +64,18 @@ def dump_json(data, path, required=True):
         print(f"Warning: skipped updating locked file: {path}")
 
 
-def create_directories():
+def create_directories(dataset_names=None):
     """创建必要的目录结构"""
-    datasets = ["NYSE", "NASDAQ", "DJIA"]
+    datasets = dataset_names or ["NYSE", "NASDAQ", "DJIA"]
     for dataset in datasets:
-        os.makedirs(f"saved_models/{dataset}", exist_ok=True)
-    os.makedirs("saved_models/summary", exist_ok=True)
+        os.makedirs(os.path.join(SAVED_MODELS_DIR, dataset), exist_ok=True)
+    os.makedirs(os.path.join(SAVED_MODELS_DIR, "summary"), exist_ok=True)
     print("✅ 目录结构创建完成")
 
 
 def train_single_dataset(dataset_name, dataset_file):
     """训练单个数据集"""
+    dataset_file = resolve_project_path(dataset_file)
     print(f"\n🎯 开始训练数据集: {dataset_name}")
     print(f"📊 数据集文件: {dataset_file}")
     print("-" * 50)
@@ -75,6 +87,8 @@ def train_single_dataset(dataset_name, dataset_file):
     
     # 获取配置
     model_args, config = get_paper_config(dataset_name)
+    config.dataset = dataset_name
+    config.log_dir = os.path.join(SAVED_MODELS_DIR, dataset_name) + os.sep
     print(f"💾 模型保存路径: {config.log_dir}")
     
     # 执行训练
@@ -186,6 +200,8 @@ def run_training(model_args, config, dataset_file, dataset_name):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         results = {
             "dataset": dataset_name,
+            "dataset_file": dataset_file,
+            "num_features": int(num_features),
             "IC": float(IC),
             "RIC": float(RIC),
             "MAE": float(mae),
@@ -252,23 +268,25 @@ def run_training(model_args, config, dataset_file, dataset_name):
 
 def save_summary_results(all_results):
     """保存汇总结果"""
-    summary_file = "saved_models/summary/all_results_comparison.json"
+    summary_dir = os.path.join(SAVED_MODELS_DIR, "summary")
+    os.makedirs(summary_dir, exist_ok=True)
+    summary_file = os.path.join(summary_dir, "all_results_comparison.json")
     with open(summary_file, 'w') as f:
         json.dump(all_results, f, indent=2)
     
     # 创建对比表格
     comparison_md = "# SAMBA 多数据集训练结果对比\n\n"
     comparison_md += "## 📊 结果汇总表\n\n"
-    comparison_md += "| 数据集 | IC | RIC | RMSE | MAE | 训练时间(分钟) | 运行ID |\n"
-    comparison_md += "|--------|----|----|------|-----|----------------|--------|\n"
+    comparison_md += "| 数据集 | 特征数 | IC | RIC | RMSE | MAE | 训练时间(分钟) | 运行ID |\n"
+    comparison_md += "|--------|--------|----|----|------|-----|----------------|--------|\n"
     
     for dataset, results in all_results.items():
-        comparison_md += f"| {dataset} | {results['IC']:.4f} | {results['RIC']:.4f} | {results['RMSE']:.4f} | {results['MAE']:.4f} | {results['training_time_minutes']:.1f} | {results['run_id']} |\n"
+        comparison_md += f"| {dataset} | {results.get('num_features', '')} | {results['IC']:.4f} | {results['RIC']:.4f} | {results['RMSE']:.4f} | {results['MAE']:.4f} | {results['training_time_minutes']:.1f} | {results['run_id']} |\n"
     
-    with open("saved_models/summary/training_summary.md", 'w', encoding='utf-8') as f:
+    with open(os.path.join(summary_dir, "training_summary.md"), 'w', encoding='utf-8') as f:
         f.write(comparison_md)
     
-    print(f"📄 汇总结果已保存到: saved_models/summary/")
+    print(f"📄 汇总结果已保存到: {summary_dir}")
 
 
 def print_comparison_table(all_results):
@@ -277,22 +295,26 @@ def print_comparison_table(all_results):
     print("📊 多数据集训练结果汇总")
     print("="*80)
     
-    print(f"{'数据集':<10} {'IC':<8} {'RIC':<8} {'RMSE':<8} {'MAE':<8} {'训练时间':<10} {'运行ID':<15}")
-    print("-" * 85)
+    print(f"{'数据集':<14} {'特征数':<8} {'IC':<8} {'RIC':<8} {'RMSE':<8} {'MAE':<8} {'训练时间':<10} {'运行ID':<15}")
+    print("-" * 100)
     
     for dataset, results in all_results.items():
-        print(f"{dataset:<10} {results['IC']:<8.4f} {results['RIC']:<8.4f} {results['RMSE']:<8.4f} {results['MAE']:<8.4f} {results['training_time_minutes']:<10.1f} {results['run_id']:<15}")
+        print(f"{dataset:<14} {results.get('num_features', ''):<8} {results['IC']:<8.4f} {results['RIC']:<8.4f} {results['RMSE']:<8.4f} {results['MAE']:<8.4f} {results['training_time_minutes']:<10.1f} {results['run_id']:<15}")
 
 
 def main():
     """主函数 - 在这里配置要训练的数据集"""
     
     # ===== 配置要训练的数据集 =====
-    # 在这里添加或删除要训练的数据集
+    # 对比 NYSE 完整 82 维特征、NYSE 基础指标特征，以及新对齐的 A 股/指数基础指标数据
     datasets_to_train = [
-    #     ("NYSE", "Dataset/combined_dataframe_NYSE.csv"),
-        ("NASDAQ", "Dataset/combined_dataframe_IXIC.csv"),
-        ("DJIA", "Dataset/combined_dataframe_DJI.csv")
+        # ("NYSE_82", "Dataset/combined_dataframe_NYSE.csv"),
+        # ("NYSE_BASIC", "Dataset/combined_dataframe_NYSE_basic_indicators.csv"),
+        ("000016SH_BASIC", "Dataset/combined_dataframe_000016SH_basic_indicators.csv"),
+        ("000100SZ_BASIC", "Dataset/combined_dataframe_000100SZ_basic_indicators.csv"),
+        ("000300SH_BASIC", "Dataset/combined_dataframe_000300SH_basic_indicators.csv"),
+        ("002129SZ_BASIC", "Dataset/combined_dataframe_002129SZ_basic_indicators.csv"),
+        ("300015SZ_BASIC", "Dataset/combined_dataframe_300015SZ_basic_indicators.csv")
     ]
     
     # 如果只想训练单个数据集，可以这样配置：
@@ -315,7 +337,7 @@ def main():
     print("="*50)
     
     # 创建目录结构
-    create_directories()
+    create_directories([dataset_name for dataset_name, _ in datasets_to_train])
     
     # 依次训练每个数据集
     all_results = {}

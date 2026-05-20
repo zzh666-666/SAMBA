@@ -1,0 +1,92 @@
+{
+  "000016SH_BASIC": {
+    "dataset": "000016SH_BASIC",
+    "dataset_file": "/root/data-tmp/zzh/SAMBA/SAMBA/Dataset/combined_dataframe_000016SH_basic_indicators.csv",
+    "num_features": 14,
+    "IC": 0.920148491859436,
+    "RIC": 0.9028108716011047,
+    "MAE": 0.0033143346663564444,
+    "RMSE": 0.004385326988995075,
+    "training_time_minutes": 155.1382616321246,
+    "timestamp": "2026-05-19T23:55:34.008112",
+    "run_id": "20260519_235534",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0004,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  "000100SZ_BASIC": {
+    "dataset": "000100SZ_BASIC",
+    "dataset_file": "/root/data-tmp/zzh/SAMBA/SAMBA/Dataset/combined_dataframe_000100SZ_basic_indicators.csv",
+    "num_features": 14,
+    "IC": 0.20158834755420685,
+    "RIC": 0.203666552901268,
+    "MAE": 0.07323656231164932,
+    "RMSE": 0.09759216010570526,
+    "training_time_minutes": 74.98320574760437,
+    "timestamp": "2026-05-20T01:10:33.175601",
+    "run_id": "20260520_011033",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0004,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  "000300SH_BASIC": {
+    "dataset": "000300SH_BASIC",
+    "dataset_file": "/root/data-tmp/zzh/SAMBA/SAMBA/Dataset/combined_dataframe_000300SH_basic_indicators.csv",
+    "num_features": 14,
+    "IC": 0.9222497344017029,
+    "RIC": 0.9055903553962708,
+    "MAE": 0.003220262238755822,
+    "RMSE": 0.004210466053336859,
+    "training_time_minutes": 155.19626309871674,
+    "timestamp": "2026-05-20T03:45:45.134506",
+    "run_id": "20260520_034545",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0004,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  "002129SZ_BASIC": {
+    "dataset": "002129SZ_BASIC",
+    "dataset_file": "/root/data-tmp/zzh/SAMBA/SAMBA/Dataset/combined_dataframe_002129SZ_basic_indicators.csv",
+    "num_features": 14,
+    "IC": 0.5907613635063171,
+    "RIC": 0.527655303478241,
+    "MAE": 0.016781620681285858,
+    "RMSE": 0.022113880142569542,
+    "training_time_minutes": 46.76042774518331,
+    "timestamp": "2026-05-20T04:32:30.917062",
+    "run_id": "20260520_043230",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0004,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  "300015SZ_BASIC": {
+    "dataset": "300015SZ_BASIC",
+    "dataset_file": "/root/data-tmp/zzh/SAMBA/SAMBA/Dataset/combined_dataframe_300015SZ_basic_indicators.csv",
+    "num_features": 14,
+    "IC": 0.8688722252845764,
+    "RIC": 0.8085085153579712,
+    "MAE": 0.012108173221349716,
+    "RMSE": 0.01648247055709362,
+    "training_time_minutes": 68.1662244796753,
+    "timestamp": "2026-05-20T05:40:41.069660",
+    "run_id": "20260520_054041",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0004,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  }
+}

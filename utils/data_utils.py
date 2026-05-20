@@ -144,6 +144,8 @@ def prepare_data(csv_file, window=5, predict=1, test_ratio=0.15, val_ratio=0.05,
     if "Name" in X.columns:
         del X["Name"]        # 删除名称列
 
+    X = X.apply(pd.to_numeric, errors="coerce")
+
     # 不将 Target 类标签加入输入特征，避免信息泄露
     X.dropna(inplace=True)  # 删除缺失值
     

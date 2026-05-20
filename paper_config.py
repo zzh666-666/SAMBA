@@ -18,7 +18,8 @@ def get_paper_config(dataset_name="NYSE"):
     包括所有超参数设置，以确保结果的可重现性。
     
     参数:
-        dataset_name: 数据集名称 ("NYSE", "NASDAQ", "DJIA")
+        dataset_name: 数据集名称 ("NYSE", "NASDAQ", "DJIA", "NYSE_82", "NYSE_BASIC",
+            "000016SH_BASIC", "000100SZ_BASIC", "000300SH_BASIC", "002129SZ_BASIC", "300015SZ_BASIC")
     
     返回:
         model_args: 模型架构配置
@@ -46,7 +47,7 @@ def get_paper_config(dataset_name="NYSE"):
     
     # 训练配置（与论文完全一致）
     training_config = TrainingConfig(
-        dataset='STOCK_DATA',     # 数据集名称
+        dataset=dataset_name,     # 数据集名称
         lag=sequence_length,      # 输入序列长度
         horizon=forecast_horizon, # 预测时间步长
         num_nodes=82,             # 82个日度股票特征
@@ -92,6 +93,13 @@ def get_dataset_mapping():
     """
     return {
         "NYSE": "Dataset/combined_dataframe_NYSE.csv",
+        "NYSE_82": "Dataset/combined_dataframe_NYSE.csv",
+        "NYSE_BASIC": "Dataset/combined_dataframe_NYSE_basic_indicators.csv",
+        "000016SH_BASIC": "Dataset/combined_dataframe_000016SH_basic_indicators.csv",
+        "000100SZ_BASIC": "Dataset/combined_dataframe_000100SZ_basic_indicators.csv",
+        "000300SH_BASIC": "Dataset/combined_dataframe_000300SH_basic_indicators.csv",
+        "002129SZ_BASIC": "Dataset/combined_dataframe_002129SZ_basic_indicators.csv",
+        "300015SZ_BASIC": "Dataset/combined_dataframe_300015SZ_basic_indicators.csv",
         "NASDAQ": "Dataset/combined_dataframe_IXIC.csv", 
         "DJIA": "Dataset/combined_dataframe_DJI.csv"
     }
@@ -111,6 +119,55 @@ def get_dataset_info():
     """
     return {
         'datasets': [
+            {
+                'name': 'NYSE_82',
+                'file': 'combined_dataframe_NYSE.csv',
+                'description': 'New York Stock Exchange with full 82-dimensional feature set',
+                'period': 'January 2010 to November 2023',
+                'features': 82
+            },
+            {
+                'name': 'NYSE_BASIC',
+                'file': 'combined_dataframe_NYSE_basic_indicators.csv',
+                'description': 'New York Stock Exchange with basic indicator feature set',
+                'period': 'January 2010 to November 2023',
+                'features': 15
+            },
+            {
+                'name': '000016SH_BASIC',
+                'file': 'combined_dataframe_000016SH_basic_indicators.csv',
+                'description': 'SSE 50 Index aligned to the NYSE basic indicator schema',
+                'period': 'January 2010 to October 2023',
+                'features': 15
+            },
+            {
+                'name': '000100SZ_BASIC',
+                'file': 'combined_dataframe_000100SZ_basic_indicators.csv',
+                'description': 'TCL Technology aligned to the NYSE basic indicator schema',
+                'period': 'January 2010 to October 2023',
+                'features': 15
+            },
+            {
+                'name': '000300SH_BASIC',
+                'file': 'combined_dataframe_000300SH_basic_indicators.csv',
+                'description': 'CSI 300 Index aligned to the NYSE basic indicator schema',
+                'period': 'January 2010 to October 2023',
+                'features': 15
+            },
+            {
+                'name': '002129SZ_BASIC',
+                'file': 'combined_dataframe_002129SZ_basic_indicators.csv',
+                'description': 'TCL Zhonghuan aligned to the NYSE basic indicator schema',
+                'period': 'January 2010 to October 2023',
+                'features': 15
+            },
+            {
+                'name': '300015SZ_BASIC',
+                'file': 'combined_dataframe_300015SZ_basic_indicators.csv',
+                'description': 'Aier Eye Hospital aligned to the NYSE basic indicator schema',
+                'period': 'January 2010 to October 2023',
+                'features': 15
+            },
             {
                 'name': 'NASDAQ',
                 'file': 'combined_dataframe_IXIC.csv',

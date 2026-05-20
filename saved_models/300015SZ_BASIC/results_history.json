@@ -1,0 +1,38 @@
+[
+  {
+    "dataset": "300015SZ_BASIC",
+    "dataset_file": "/root/data-tmp/zzh/SAMBA/SAMBA/Dataset/combined_dataframe_300015SZ_basic_indicators.csv",
+    "num_features": 14,
+    "IC": 0.8688722252845764,
+    "RIC": 0.8085085153579712,
+    "MAE": 0.012108173221349716,
+    "RMSE": 0.01648247055709362,
+    "training_time_minutes": 68.1662244796753,
+    "timestamp": "2026-05-20T05:40:41.069660",
+    "run_id": "20260520_054041",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0004,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  },
+  {
+    "dataset": "300015SZ_BASIC",
+    "dataset_file": "/root/data-tmp/zzh/SAMBA/SAMBA/Dataset/combined_dataframe_300015SZ_basic_indicators.csv",
+    "num_features": 14,
+    "IC": 0.005588439758867025,
+    "RIC": -0.005766960792243481,
+    "MAE": 0.03219641000032425,
+    "RMSE": 0.04513218253850937,
+    "training_time_minutes": 70.58896930615107,
+    "timestamp": "2026-05-20T15:57:25.981479",
+    "run_id": "20260520_155725",
+    "config": {
+      "batch_size": 32,
+      "lr_init": 0.0004,
+      "epochs": 2500,
+      "early_stop_patience": 500
+    }
+  }
+]
